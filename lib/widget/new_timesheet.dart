@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:timesheettrackr/constants/theme.dart';
 import 'package:timesheettrackr/controllers/auth_controller.dart';
-import 'package:timesheettrackr/home/view/home.dart';
 import '../constants/constants.dart';
 
 class New_TeamSheet extends StatefulWidget {
@@ -15,6 +14,9 @@ class New_TeamSheet extends StatefulWidget {
 
 class _New_TimeSheetState extends State<New_TeamSheet> {
   DateTime _today = DateTime.now();
+  String? _projectSelect;
+  String? _taskSelect;
+
   AuthController authController = AuthController();
   @override
   void initState() {
@@ -39,23 +41,20 @@ class _New_TimeSheetState extends State<New_TeamSheet> {
         setState(
           () {
             _today = value!;
-            widget.Date = (DateFormat('d MMM').format(_today)).toString();
+            widget.Date = (DateFormat('d MMM y').format(_today)).toString();
           },
         );
       },
     );
   }
-  TextEditingController _remarkController = TextEditingController();
+
+  TextEditingController _descriptionController = TextEditingController();
 
   TimeOfDay _StartTime = TimeOfDay.now();
   TimeOfDay _EndTime = TimeOfDay.now();
 
-  String? _projectSelect;
-
   @override
   Widget build(BuildContext context) {
-
-
     String startPeriod = _StartTime.hour >= 12 ? 'PM' : 'AM';
     int starthourOf12Format = _StartTime.hourOfPeriod;
     String starttimeString = starthourOf12Format.toString().padLeft(2, '0') +
@@ -73,17 +72,14 @@ class _New_TimeSheetState extends State<New_TeamSheet> {
         endPeriod;
 
     ////////Circular Progress Bar
-    if (authController.projects.isEmpty) {
-      return Card(
-        child: Container(
-          height: 200,
-          width: 200,
-          child: Center(
-            child: CircularProgressIndicator(),
-          ),
-        ),
-      ); // Show a loading indicator or handle the case when the projects list is empty
-    }
+    // if (authController.projects.isEmpty) {
+    //   // return Card(
+    //   //   child: Center(
+    //   //     child: CircularProgressIndicator(),
+    //   //   ),
+    //   // ); // Show a loading indicator or handle the case when the projects list is empty
+    //   return showLoaderDialog(context);
+    // }
     return Scaffold(
       body: SingleChildScrollView(
         child: Container(
@@ -159,11 +155,11 @@ class _New_TimeSheetState extends State<New_TeamSheet> {
               DropdownButtonFormField(
                 decoration: InputDecoration(
                     border: InputBorder.none, hintText: 'Select Task'),
-                value: _projectSelect,
+                value: _taskSelect,
                 items: _buildDropdownTaskItems(),
                 onChanged: (String? newValue) {
                   setState(() {
-                    _projectSelect = newValue;
+                    _taskSelect = newValue;
                   });
                 },
               ),
@@ -175,17 +171,7 @@ class _New_TimeSheetState extends State<New_TeamSheet> {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               TextFormField(
-                controller: _remarkController,
-                validator: (value) {
-                  if (_remarkController.text.isEmpty) {
-                    showMessage('Enter Description');
-                  }
-                  return null;
-                },
-                // inputFormatters: [
-                //   LengthLimitingTextInputFormatter(20),
-                //   FilteringTextInputFormatter.allow(RegExp(r'\s'))
-                // ],
+                controller: _descriptionController,
                 keyboardType: TextInputType.text,
                 textInputAction: TextInputAction.done,
                 decoration: InputDecoration(
@@ -269,7 +255,18 @@ class _New_TimeSheetState extends State<New_TeamSheet> {
               Center(
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.of(context).pushNamed(HomePage.routeName);
+                    bool isValidate = descriptionValidator(_descriptionController.text);
+                    if(isValidate){
+                      authController.sendDataToServer(
+                        _projectSelect.toString(),
+                        _taskSelect.toString(),
+                        _descriptionController.text.toString(),
+                        " ${widget.Date.toString()} ${starttimeString.toString()} ",
+                        " ${widget.Date.toString()} ${endtimeString.toString()} ",
+                        context);
+                    
+                    authController.fetchAllTimeSheet();
+                    }
                   },
                   child: Text('Create Timesheet'),
                 ),
@@ -328,7 +325,7 @@ class _New_TimeSheetState extends State<New_TeamSheet> {
     return dropdownItems;
   }
 
-    List<DropdownMenuItem<String>> _buildDropdownTaskItems() {
+  List<DropdownMenuItem<String>> _buildDropdownTaskItems() {
     List<DropdownMenuItem<String>> dropdownItems = [];
 
     List<String> tasks = authController.tasks;

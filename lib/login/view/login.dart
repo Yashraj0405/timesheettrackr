@@ -4,6 +4,8 @@ import 'package:timesheettrackr/constants/theme.dart';
 import 'package:timesheettrackr/signup/view/signup.dart';
 import 'package:timesheettrackr/controllers/auth_controller.dart';
 
+import '../../constants/constants.dart';
+
 class Login extends StatefulWidget {
   static const routeName = '/Login';
 
@@ -64,7 +66,6 @@ class _LoginState extends State<Login> {
                           ),
                           TextFormField(
                             controller: authController.mailController,
-                            //controller: _emailController,
                             // validator: (value) {
                             //   if (authController.mailController.text.isEmpty) {
                             //     showMessage('Email is required');
@@ -91,13 +92,6 @@ class _LoginState extends State<Login> {
                           TextFormField(
                             obscureText: showPassword,
                             controller: authController.passwordController,
-                            //controller: _passwordController,
-                            // validator: (value) {
-                            //   if (_passwordController.text.isEmpty) {
-                            //     showMessage('Enter password');
-                            //   }
-                            //   return null;
-                            // },
                             inputFormatters: [
                               FilteringTextInputFormatter.deny(RegExp(r'\s'))
                             ],
@@ -154,11 +148,13 @@ class _LoginState extends State<Login> {
                     width: double.infinity,
                     height: 60,
                     child: ElevatedButton(
-                      onPressed: () {
-                        authController.loginUser(context);
-                        //authController.fetchProjectData();
-                        // authController.fetchTaskData();
-                        //loginUser();
+                      onPressed: () async {
+                        bool isValidate = loginVaildation(
+                            authController.mailController.text,
+                            authController.passwordController.text);
+                        if (isValidate) {
+                          authController.loginUser(context);
+                        }
                       },
                       child: Text(
                         'LOGIN',
